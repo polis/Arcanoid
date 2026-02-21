@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import polis.app.arcanoid.game.GameViewModel
 import polis.app.arcanoid.game.GameStatus
+import polis.app.arcanoid.game.PaddleDirection
 
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -40,24 +41,42 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
                 .focusRequester(focusRequester)
                 .focusable()
                 .onKeyEvent {
-                    if (it.type == KeyEventType.KeyDown) {
-                        when (it.key) {
-                            Key.DirectionLeft, Key.A -> {
-                                viewModel.movePaddle(state.paddle.x - 0.05f)
-                                true
+                    when (it.type) {
+                        KeyEventType.KeyDown -> {
+                            when (it.key) {
+                                Key.DirectionLeft, Key.A -> {
+                                    viewModel.setPaddleDirection(PaddleDirection.LEFT)
+                                    true
+                                }
+                                Key.DirectionRight, Key.D -> {
+                                    viewModel.setPaddleDirection(PaddleDirection.RIGHT)
+                                    true
+                                }
+                                Key.Spacebar -> {
+                                    viewModel.launchBall()
+                                    true
+                                }
+                                else -> false
                             }
-                            Key.DirectionRight, Key.D -> {
-                                viewModel.movePaddle(state.paddle.x + 0.05f)
-                                true
-                            }
-                            Key.Spacebar -> {
-                                viewModel.launchBall()
-                                true
-                            }
-                            else -> false
                         }
-                    } else {
-                        false
+                        KeyEventType.KeyUp -> {
+                            when (it.key) {
+                                Key.DirectionLeft, Key.A -> {
+                                    if (state.paddleDirection == PaddleDirection.LEFT) {
+                                        viewModel.setPaddleDirection(PaddleDirection.NONE)
+                                    }
+                                    true
+                                }
+                                Key.DirectionRight, Key.D -> {
+                                    if (state.paddleDirection == PaddleDirection.RIGHT) {
+                                        viewModel.setPaddleDirection(PaddleDirection.NONE)
+                                    }
+                                    true
+                                }
+                                else -> false
+                            }
+                        }
+                        else -> false
                     }
                 }
         ) {

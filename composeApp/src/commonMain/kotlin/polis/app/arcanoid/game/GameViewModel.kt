@@ -39,7 +39,14 @@ class GameViewModel : ViewModel() {
     }
 
     fun movePaddle(targetX: Float) {
-        _state.update { it.copy(paddle = it.paddle.copy(x = targetX.coerceIn(0.1f, 0.9f))) }
+        _state.update { it.copy(
+            paddle = it.paddle.copy(x = targetX.coerceIn(0.1f, 0.9f)),
+            paddleDirection = PaddleDirection.NONE
+        ) }
+    }
+
+    fun setPaddleDirection(direction: PaddleDirection) {
+        _state.update { it.copy(paddleDirection = direction) }
     }
 
     fun launchBall() {

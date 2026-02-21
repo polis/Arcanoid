@@ -27,8 +27,13 @@ enum class GameStatus {
     IDLE, RUNNING, PAUSED, GAME_OVER, WON
 }
 
+enum class PaddleDirection {
+    NONE, LEFT, RIGHT
+}
+
 data class GameState(
     val paddle: Paddle = Paddle(x = 0.5f),
+    val paddleDirection: PaddleDirection = PaddleDirection.NONE,
     val ball: Ball = Ball(x = 0.5f, y = 0.8f, vx = 0f, vy = 0f),
     val bricks: List<Brick> = emptyList(),
     val score: Int = 0,

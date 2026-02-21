@@ -5,7 +5,26 @@ import kotlin.math.min
 
 object PhysicsEngine {
     fun update(state: GameState, deltaTime: Float): GameState {
-        if (state.status != GameStatus.RUNNING) return state
+        if (state.status != GameStatus.RUNNING && state.status != GameStatus.IDLE) return state
+
+        // Update Paddle position
+        val paddleSpeed = 1.0f // 1 field width per second
+        var paddleX = state.paddle.x
+        when (state.paddleDirection) {
+            PaddleDirection.LEFT -> paddleX -= paddleSpeed * deltaTime
+            PaddleDirection.RIGHT -> paddleX += paddleSpeed * deltaTime
+            PaddleDirection.NONE -> {}
+        }
+        paddleX = paddleX.coerceIn(state.paddle.width / 2, 1f - state.paddle.width / 2)
+        val nextPaddle = state.paddle.copy(x = paddleX)
+
+        if (state.status == GameStatus.IDLE) {
+            // In IDLE state, keep ball on paddle
+            return state.copy(
+                paddle = nextPaddle,
+                ball = state.ball.copy(x = nextPaddle.x)
+            )
+        }
 
         var nextBall = state.ball.copy(
             x = state.ball.x + state.ball.vx * deltaTime,
@@ -48,7 +67,7 @@ object PhysicsEngine {
         }
 
         // Paddle collision
-        val paddle = state.paddle
+        val paddle = nextPaddle
         if (y + nextBall.radius > 0.9f - paddle.height / 2 &&
             y - nextBall.radius < 0.9f + paddle.height / 2 &&
             x + nextBall.radius > paddle.x - paddle.width / 2 &&
@@ -85,6 +104,7 @@ object PhysicsEngine {
 
         return state.copy(
             ball = nextBall.copy(x = x, y = y, vx = vx, vy = vy),
+            paddle = nextPaddle,
             bricks = nextBricks,
             score = score,
             lives = lives,
