@@ -1,8 +1,5 @@
 package polis.app.arcanoid.game
 
-import kotlin.math.max
-import kotlin.math.min
-
 object PhysicsEngine {
     fun update(state: GameState, deltaTime: Float): GameState {
         if (state.status != GameStatus.RUNNING && state.status != GameStatus.IDLE) return state

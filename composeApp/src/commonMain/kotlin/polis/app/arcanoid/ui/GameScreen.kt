@@ -12,6 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.lifecycle.viewmodel.compose.viewModel
 import polis.app.arcanoid.game.GameViewModel
 import polis.app.arcanoid.game.GameStatus
@@ -118,25 +120,25 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
                         modifier = Modifier.fillMaxSize()
                     )
 
-            if (state.status == GameStatus.IDLE) {
-                Text(
-                    "Tap to Launch",
-                    color = Color.White,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else if (state.status == GameStatus.GAME_OVER) {
-                Text(
-                    "GAME OVER\nScore: ${state.score}\nTap to Restart",
-                    color = Color.Red,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            } else if (state.status == GameStatus.WON) {
-                Text(
-                    "YOU WON!\nScore: ${state.score}\nTap for Next Level",
-                    color = Color.Green,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
+                    if (state.status == GameStatus.IDLE) {
+                        Text(
+                            "Tap to Launch",
+                            color = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    } else if (state.status == GameStatus.GAME_OVER) {
+                        Text(
+                            "GAME OVER\nScore: ${state.score}\nTap to Restart",
+                            color = Color.Red,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    } else if (state.status == GameStatus.WON) {
+                        Text(
+                            "YOU WON!\nScore: ${state.score}\nTap for Next Level",
+                            color = Color.Green,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
 
                 if (isWide) {
