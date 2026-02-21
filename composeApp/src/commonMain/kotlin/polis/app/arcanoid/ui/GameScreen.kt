@@ -40,6 +40,8 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFF121212))
+                // Only pad top/bottom to avoid status bar overlap while keeping full width
+                .windowInsetsPadding(WindowInsets.safeContent.only(WindowInsetsSides.Vertical)) 
                 .focusRequester(focusRequester)
                 .focusable()
                 .onKeyEvent {
@@ -82,78 +84,174 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
                     }
                 }
         ) {
-            val isWide = maxWidth > maxHeight * 1.5f
+            val isPortrait = maxHeight > maxWidth
 
-            Row(modifier = Modifier.fillMaxSize()) {
-                if (isWide) {
-                    // Left panel
-                    SidePanel(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        title = "ARCANOID",
+            if (isPortrait) {
+                // Portrait Layout
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Top Info Bar
+                    InfoBar(
                         score = state.score,
                         highScore = state.highScore,
-                        lives = state.lives
+                        lives = state.lives,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight()
+                            .padding(vertical = 8.dp)
                     )
+
+                    // Game Field
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 24.dp, vertical = 8.dp) // Shrink the window
+                            .fillMaxWidth()
+                            .aspectRatio(9f / 16f, matchHeightConstraintsFirst = false)
+                            .background(Color.Black)
+                            .align(Alignment.CenterHorizontally)
+                    ) {
+                        GameWindow(state, viewModel)
+                    }
+                    
+                    // Bottom spacing
+                    Box(modifier = Modifier.weight(0.2f))
                 }
-
-                // Game Field
-                Box(
-                    modifier = Modifier
-                        .weight(if (isWide) 2f else 1f)
-                        .fillMaxHeight()
-                        .aspectRatio(9f / 16f, matchHeightConstraintsFirst = true)
-                        .background(Color.Black)
-                        .align(Alignment.CenterVertically)
-                ) {
-                    ArcanoidCanvas(
-                        state = state,
-                        onPaddleMove = { viewModel.movePaddle(it) },
-                        onLaunch = { 
-                            if (state.status == GameStatus.GAME_OVER || state.status == GameStatus.WON) {
-                                viewModel.resetLevel()
-                            } else {
-                                viewModel.launchBall()
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
-
-                    if (state.status == GameStatus.IDLE) {
-                        Text(
-                            "Tap to Launch",
-                            color = Color.White,
-                            modifier = Modifier.align(Alignment.Center)
+            } else {
+                // Landscape Layout
+                val isWide = maxWidth > maxHeight * 1.5f
+                Row(modifier = Modifier.fillMaxSize()) {
+                    if (isWide) {
+                        SidePanel(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            title = "ARCANOID",
+                            score = state.score,
+                            highScore = state.highScore,
+                            lives = state.lives
                         )
-                    } else if (state.status == GameStatus.GAME_OVER) {
-                        Text(
-                            "GAME OVER\nScore: ${state.score}\nTap to Restart",
-                            color = Color.Red,
-                            modifier = Modifier.align(Alignment.Center)
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(if (isWide) 2f else 1f)
+                            .fillMaxHeight()
+                            .aspectRatio(9f / 16f, matchHeightConstraintsFirst = true)
+                            .background(Color.Black)
+                            .align(Alignment.CenterVertically)
+                    ) {
+                        GameWindow(state, viewModel)
+                    }
+
+                    if (isWide) {
+                        SidePanel(
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            title = "NEXT LEVELS",
+                            score = null,
+                            lives = null
                         )
-                    } else if (state.status == GameStatus.WON) {
-                        Text(
-                            "YOU WON!\nScore: ${state.score}\nTap for Next Level",
-                            color = Color.Green,
-                            modifier = Modifier.align(Alignment.Center)
+                    } else {
+                        // Slim info panel for landscape but not wide
+                        SidePanel(
+                            modifier = Modifier.width(120.dp).fillMaxHeight(),
+                            title = "STATS",
+                            score = state.score,
+                            highScore = state.highScore,
+                            lives = state.lives
                         )
                     }
                 }
-
-                if (isWide) {
-                    // Right panel
-                    SidePanel(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        title = "NEXT LEVELS",
-                        score = null,
-                        lives = null
-                    )
-                }
             }
         }
+    }
+}
+
+@Composable
+fun GameWindow(state: polis.app.arcanoid.game.GameState, viewModel: GameViewModel) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        ArcanoidCanvas(
+            state = state,
+            onPaddleMove = { viewModel.movePaddle(it) },
+            onLaunch = { 
+                if (state.status == GameStatus.GAME_OVER || state.status == GameStatus.WON) {
+                    viewModel.resetLevel()
+                } else {
+                    viewModel.launchBall()
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        if (state.status == GameStatus.IDLE) {
+            Text(
+                "Tap to Launch",
+                color = Color.White,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        } else if (state.status == GameStatus.GAME_OVER) {
+            Text(
+                "GAME OVER\nScore: ${state.score}\nTap to Restart",
+                color = Color.Red,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        } else if (state.status == GameStatus.WON) {
+            Text(
+                "YOU WON!\nScore: ${state.score}\nTap for Next Level",
+                color = Color.Green,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
+    }
+}
+
+@Composable
+fun InfoBar(
+    score: Int,
+    highScore: Int,
+    lives: Int,
+    modifier: Modifier
+) {
+    Row(
+        modifier = modifier
+            .background(Color(0xFF1E1E1E))
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Scores Column (Left)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "SCORE: $score", 
+                color = Color.Yellow, 
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1
+            )
+            Text(
+                "BEST: $highScore", 
+                color = Color.Green, 
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1
+            )
+        }
+
+        // Title (Center)
+        Text(
+            "ARCANOID", 
+            color = Color.White, 
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.weight(1f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            maxLines = 1
+        )
+
+        // Lives (Right)
+        Text(
+            "LIVES: $lives", 
+            color = Color.Cyan, 
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.weight(1f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            maxLines = 1
+        )
     }
 }
 
