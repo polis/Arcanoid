@@ -20,7 +20,27 @@ data class Brick(
     val width: Float,
     val height: Float,
     val isDestroyed: Boolean = false,
-    val colorIndex: Int = 0
+    val colorIndex: Int = 0,
+    val health: Int = 1
+)
+
+enum class PowerUpType {
+    FIRE
+}
+
+data class PowerUp(
+    val x: Float,
+    val y: Float,
+    val type: PowerUpType,
+    val width: Float = 0.04f,
+    val height: Float = 0.04f
+)
+
+data class Projectile(
+    val x: Float,
+    val y: Float,
+    val radius: Float = 0.01f,
+    val vy: Float = -1.2f
 )
 
 enum class GameStatus {
@@ -36,8 +56,13 @@ data class GameState(
     val paddleDirection: PaddleDirection = PaddleDirection.NONE,
     val ball: Ball = Ball(x = 0.5f, y = 0.8f, vx = 0f, vy = 0f),
     val bricks: List<Brick> = emptyList(),
+    val powerUps: List<PowerUp> = emptyList(),
+    val projectiles: List<Projectile> = emptyList(),
     val score: Int = 0,
     val highScore: Int = 0,
     val lives: Int = 3,
-    val status: GameStatus = GameStatus.IDLE
+    val level: Int = 1,
+    val status: GameStatus = GameStatus.IDLE,
+    val canShoot: Boolean = false,
+    val shootingActiveUntil: Long = 0
 )

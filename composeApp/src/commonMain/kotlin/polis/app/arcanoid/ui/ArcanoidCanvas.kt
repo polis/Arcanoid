@@ -50,19 +50,54 @@ fun ArcanoidCanvas(
         // Draw Bricks
         state.bricks.forEach { brick ->
             if (!brick.isDestroyed) {
+                val color = brickColors.getOrElse(brick.colorIndex) { Color.Gray }
+                
+                // Draw main brick
                 drawRoundRect(
-                    color = brickColors.getOrElse(brick.colorIndex) { Color.Gray },
+                    color = color,
                     topLeft = Offset(brick.x * w, brick.y * h),
                     size = Size(brick.width * w, brick.height * h),
                     cornerRadius = CornerRadius(4f, 4f)
                 )
+
+                // If health > 1, draw a border or indicator
+                if (brick.health > 1) {
+                    drawRoundRect(
+                        color = Color.White.copy(alpha = 0.5f),
+                        topLeft = Offset(brick.x * w, brick.y * h),
+                        size = Size(brick.width * w, brick.height * h),
+                        cornerRadius = CornerRadius(4f, 4f),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+                    )
+                }
             }
+        }
+
+        // Draw PowerUps
+        state.powerUps.forEach { pu ->
+            drawRoundRect(
+                color = Color(0xFFFF9800), // Orange
+                topLeft = Offset((pu.x - pu.width / 2) * w, pu.y * h),
+                size = Size(pu.width * w, pu.height * h),
+                cornerRadius = CornerRadius(4f, 4f)
+            )
+            // Optional: Draw a "P" inside? Or just keep it orange.
+        }
+
+        // Draw Projectiles
+        state.projectiles.forEach { proj ->
+            drawRect(
+                color = Color.White,
+                topLeft = Offset(proj.x * w, proj.y * h),
+                size = Size(0.01f * w, 0.02f * h)
+            )
         }
 
         // Draw Paddle
         val paddle = state.paddle
+        val paddleColor = if (state.canShoot) Color(0xFFFF5252) else Color(0xFF2196F3)
         drawRoundRect(
-            color = Color(0xFF2196F3),
+            color = paddleColor,
             topLeft = Offset((paddle.x - paddle.width / 2) * w, 0.9f * h - (paddle.height / 2) * h),
             size = Size(paddle.width * w, paddle.height * h),
             cornerRadius = CornerRadius(8f, 8f)

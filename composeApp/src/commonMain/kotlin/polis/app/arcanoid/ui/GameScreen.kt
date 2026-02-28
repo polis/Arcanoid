@@ -5,6 +5,8 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,11 +58,24 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
                                     viewModel.setPaddleDirection(PaddleDirection.RIGHT)
                                     true
                                 }
-                                Key.Spacebar -> {
-                                    viewModel.launchBall()
+                                Key.Spacebar, Key.W -> {
+                                    if (state.status == GameStatus.RUNNING && state.canShoot) {
+                                        viewModel.fireProjectile()
+                                    } else {
+                                        viewModel.launchBall()
+                                    }
                                     true
                                 }
-                                else -> false
+                                else -> {
+                                    if (it.utf16CodePoint == ' '.code) {
+                                        if (state.status == GameStatus.RUNNING && state.canShoot) {
+                                            viewModel.fireProjectile()
+                                        } else {
+                                            viewModel.launchBall()
+                                        }
+                                        true
+                                    } else false
+                                }
                             }
                         }
                         KeyEventType.KeyUp -> {
@@ -94,6 +109,7 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
                         score = state.score,
                         highScore = state.highScore,
                         lives = state.lives,
+                        level = state.level,
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
@@ -126,7 +142,8 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
                             title = "ARCANOID",
                             score = state.score,
                             highScore = state.highScore,
-                            lives = state.lives
+                            lives = state.lives,
+                            level = state.level
                         )
                     }
 
@@ -155,7 +172,8 @@ fun GameScreen(viewModel: GameViewModel = viewModel { GameViewModel() }) {
                             title = "STATS",
                             score = state.score,
                             highScore = state.highScore,
-                            lives = state.lives
+                            lives = state.lives,
+                            level = state.level
                         )
                     }
                 }
@@ -171,8 +189,12 @@ fun GameWindow(state: polis.app.arcanoid.game.GameState, viewModel: GameViewMode
             state = state,
             onPaddleMove = { viewModel.movePaddle(it) },
             onLaunch = { 
-                if (state.status == GameStatus.GAME_OVER || state.status == GameStatus.WON) {
-                    viewModel.resetLevel()
+                if (state.status == GameStatus.GAME_OVER) {
+                    viewModel.resetLevel(1, resetStats = true)
+                } else if (state.status == GameStatus.WON) {
+                    viewModel.nextLevel()
+                } else if (state.status == GameStatus.RUNNING && state.canShoot) {
+                    viewModel.fireProjectile()
                 } else {
                     viewModel.launchBall()
                 }
@@ -181,25 +203,50 @@ fun GameWindow(state: polis.app.arcanoid.game.GameState, viewModel: GameViewMode
         )
 
         if (state.status == GameStatus.IDLE) {
-            Text(
-                "Tap to Launch",
-                color = Color.White,
+            Button(
+                onClick = { viewModel.launchBall() },
                 modifier = Modifier.align(Alignment.Center)
-            )
+            ) {
+                Text("Launch Ball")
+            }
         } else if (state.status == GameStatus.GAME_OVER) {
-            Text(
-                "GAME OVER\nScore: ${state.score}\nTap to Restart",
-                color = Color.Red,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.align(Alignment.Center)
-            )
+            ) {
+                Text(
+                    "GAME OVER\nScore: ${state.score}",
+                    color = Color.Red,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = { viewModel.resetLevel(1, resetStats = true) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) {
+                    Text("Play Again", color = Color.White)
+                }
+            }
         } else if (state.status == GameStatus.WON) {
-            Text(
-                "YOU WON!\nScore: ${state.score}\nTap for Next Level",
-                color = Color.Green,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.align(Alignment.Center)
-            )
+            ) {
+                Text(
+                    "YOU WON!\nScore: ${state.score}",
+                    color = Color.Green,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = { viewModel.nextLevel() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
+                ) {
+                    Text("Next Level", color = Color.White)
+                }
+            }
         }
     }
 }
@@ -209,6 +256,7 @@ fun InfoBar(
     score: Int,
     highScore: Int,
     lives: Int,
+    level: Int,
     modifier: Modifier
 ) {
     Row(
@@ -233,15 +281,21 @@ fun InfoBar(
             )
         }
 
-        // Title (Center)
-        Text(
-            "ARCANOID", 
-            color = Color.White, 
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.weight(1f),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            maxLines = 1
-        )
+        // Title & Level (Center)
+        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "ARCANOID", 
+                color = Color.White, 
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1
+            )
+            Text(
+                "LEVEL: $level", 
+                color = Color.LightGray, 
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1
+            )
+        }
 
         // Lives (Right)
         Text(
@@ -261,7 +315,8 @@ fun SidePanel(
     title: String,
     score: Int?,
     highScore: Int? = null,
-    lives: Int?
+    lives: Int?,
+    level: Int? = null
 ) {
     Column(
         modifier = modifier
@@ -271,6 +326,9 @@ fun SidePanel(
         verticalArrangement = Arrangement.Center
     ) {
         Text(title, color = Color.White, style = MaterialTheme.typography.headlineMedium)
+        if (level != null) {
+            Text("LEVEL: $level", color = Color.LightGray)
+        }
         if (score != null) {
             Spacer(Modifier.height(32.dp))
             Text("SCORE: $score", color = Color.Yellow)
